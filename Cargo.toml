@@ -20,4 +20,13 @@ indicatif = "0.17"
 [dev-dependencies]
 assert_cmd = "2.0"
 predicates = "3.0"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "decoding_benchmarks"
+harness = false
+
+[[bench]]
+name = "streaming_benchmarks"
+harness = false
 

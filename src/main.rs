@@ -1,12 +1,6 @@
-mod cli;
-mod encoding;
-mod streaming;
-mod commands;
-#[cfg(test)]
-mod test_utils;
-
 use clap::Parser;
-use cli::{Cli, Commands};
+use open_bcif::cli::{Cli, Commands};
+use open_bcif::commands;
 
 fn main() -> anyhow::Result<()> {
     env_logger::init();
