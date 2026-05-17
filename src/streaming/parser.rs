@@ -62,29 +62,29 @@ impl<R: Read> StreamingParser<R> {
         anyhow::bail!("DataBlock incomplete")
     }
 
-    /// Yields just the header of the next Category and prepares for column iteration.
-    /// In BinaryCIF, the 'columns' key MUST be the last key in the category map
-    /// for efficient granular streaming.
     pub fn next_category_header(&mut self) -> anyhow::Result<CategoryHeader> {
         let cat_map_len = decode::read_map_len(&mut self.reader)?;
-        let mut name = String::new();
-        let mut row_count = 0;
-        let mut column_count = 0;
+        let mut name = None;
+        let mut row_count = None;
 
         for i in 0..cat_map_len {
             let key = self.read_string()?;
             match key.as_str() {
-                "name" => name = self.read_string()?,
-                "rowCount" => row_count = decode::read_int::<u32, _>(&mut self.reader)?,
+                "name" => name = Some(self.read_string()?),
+                "rowCount" => row_count = Some(decode::read_int::<u32, _>(&mut self.reader)?),
                 "columns" => {
-                    column_count = decode::read_array_len(&mut self.reader)?;
+                    let column_count = decode::read_array_len(&mut self.reader)?;
                     
                     // VALIDATION: 'columns' must be the last key to allow streaming its elements.
                     if i != cat_map_len - 1 {
-                        anyhow::bail!("Streaming Error: 'columns' is not the last key in category '{}'. Full block loading required.", name);
+                        anyhow::bail!("Streaming Error: 'columns' is not the last key in category '{:?}'. Full block loading required.", name);
                     }
                     
-                    return Ok(CategoryHeader { name, row_count, column_count });
+                    return Ok(CategoryHeader { 
+                        name: name.context("Category name missing")?, 
+                        row_count: row_count.context("Category rowCount missing")?, 
+                        column_count 
+                    });
                 }
                 _ => self.skip_value()?,
             }
@@ -155,11 +155,44 @@ mod tests {
         
         let cat_header = parser.next_category_header().unwrap();
         assert_eq!(cat_header.name, "_test_category");
-        assert_eq!(cat_header.column_count, 1);
+        assert_eq!(cat_header.column_count, 2);
         
         let col = parser.next_column().unwrap();
         assert_eq!(col.name, "id");
         
+        let col2 = parser.next_column().unwrap();
+        assert_eq!(col2.name, "delta_data");
+        
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn test_streaming_parser_missing_metadata() {
+        // Create an empty map instead of a valid BCIF
+        let path = "test_empty.bcif";
+        let file = File::create(path).unwrap();
+        let mut writer = std::io::BufWriter::new(file);
+        rmp::encode::write_map_len(&mut writer, 0).unwrap();
+        drop(writer);
+
+        let file = File::open(path).unwrap();
+        let mut parser = StreamingParser::new(BufReader::new(file));
+        let res = parser.parse_file_metadata();
+        assert!(res.is_err());
+        
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn test_streaming_parser_corrupted_data() {
+        let path = "test_corrupt.bcif";
+        std::fs::write(path, vec![0x93, 0x01, 0x02]).unwrap(); // Invalid MessagePack for our structure
+        
+        let file = File::open(path).unwrap();
+        let mut parser = StreamingParser::new(BufReader::new(file));
+        assert!(parser.parse_file_metadata().is_err());
+        
         std::fs::remove_file(path).unwrap();
     }
 }
+

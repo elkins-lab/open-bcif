@@ -29,7 +29,7 @@ pub fn convert(input_path: &str, output_path: &str, format: &str) -> anyhow::Res
             if category.row_count == 1 {
                 // Key-value style for single-row categories
                 for column in category.columns {
-                    let values = decode_column(&column)?;
+                    let values = decode_column(&column, category.row_count)?;
                     writeln!(writer, "{:<30} {}", format!("{}.{}", category.name, column.name), values[0])?;
                 }
             } else {
@@ -42,7 +42,7 @@ pub fn convert(input_path: &str, output_path: &str, format: &str) -> anyhow::Res
                 // Decode all columns
                 let mut decoded_columns = Vec::new();
                 for column in &category.columns {
-                    decoded_columns.push(decode_column(column)?);
+                    decoded_columns.push(decode_column(column, category.row_count)?);
                 }
                 
                 for r in 0..category.row_count as usize {
@@ -61,7 +61,7 @@ pub fn convert(input_path: &str, output_path: &str, format: &str) -> anyhow::Res
     Ok(())
 }
 
-fn decode_column(column: &crate::streaming::Column) -> anyhow::Result<Vec<String>> {
+fn decode_column(column: &crate::streaming::Column, row_count: u32) -> anyhow::Result<Vec<String>> {
     // For now, we only support basic ByteArray encoding in conversion
     // This can be expanded to support the full chain
     if let Some(Encoding::ByteArray { data_type }) = column.data.encoding.first() {
@@ -70,7 +70,7 @@ fn decode_column(column: &crate::streaming::Column) -> anyhow::Result<Vec<String
     }
     
     // Fallback if not ByteArray or empty
-    Ok(vec!["?".to_string(); 1])
+    Ok(vec!["?".to_string(); row_count as usize])
 }
 
 #[cfg(test)]

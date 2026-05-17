@@ -43,3 +43,33 @@ pub fn validate(input_path: &str) -> anyhow::Result<()> {
     println!("Validation successful.");
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::create_sample_bcif;
+    use std::fs;
+
+    #[test]
+    fn test_validate_functional() {
+        let path = "test_validate.bcif";
+        create_sample_bcif(path).unwrap();
+        
+        let res = validate(path);
+        assert!(res.is_ok());
+        
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn test_validate_large() {
+        let path = "test_validate_large.bcif";
+        crate::test_utils::create_large_bcif(path, 100).unwrap();
+        
+        let res = validate(path);
+        assert!(res.is_ok());
+        
+        fs::remove_file(path).unwrap();
+    }
+}
+
