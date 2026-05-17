@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::BufReader;
 use crate::streaming::parser::StreamingParser;
+use indicatif::{ProgressBar, ProgressStyle};
+use rayon::prelude::*;
 
 pub fn validate(input_path: &str) -> anyhow::Result<()> {
     let file = File::open(input_path)?;
@@ -14,22 +16,30 @@ pub fn validate(input_path: &str) -> anyhow::Result<()> {
     println!("Encoder: {}", encoder);
     println!("Data blocks: {}", block_count);
 
+    let pb = ProgressBar::new(block_count as u64);
+    pb.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta}) {msg}")?
+        .progress_chars("#>-"));
+
     for i in 0..block_count {
+        pb.set_message(format!("Block {}", i));
         let block = parser.next_data_block()?;
-        println!("  Block {}: {}", i, block.header);
-        for category in block.categories {
-            println!("    Category: {} ({} rows)", category.name, category.row_count);
-            for column in category.columns {
-                println!("      Column: {}", column.name);
-                // Simple validation: try to decode the byte array if it's the first encoding
+        
+        // Parallelize validation of categories within a block
+        block.categories.par_iter().try_for_each(|category| -> anyhow::Result<()> {
+            category.columns.par_iter().try_for_each(|column| -> anyhow::Result<()> {
                 use crate::encoding::Encoding;
                 if let Some(Encoding::ByteArray { data_type }) = column.data.encoding.first() {
                     let _ = crate::encoding::decoders::decode_byte_array(&column.data.data, *data_type)?;
                 }
-            }
-        }
+                Ok(())
+            })
+        })?;
+        
+        pb.inc(1);
     }
 
+    pb.finish_with_message("Validation complete");
     println!("Validation successful.");
     Ok(())
 }
