@@ -1,5 +1,7 @@
 # open-bcif: The Infrastructure Bridge
 
+[![Crates.io Version](https://img.shields.io/crates/v/open-bcif)](https://crates.io/crates/open-bcif)
+[![Crates.io User Downloads](https://img.shields.io/crates/u/421290)](https://crates.io/users/elkins)
 [![CI](https://github.com/elkins/open-bcif/actions/workflows/rust.yml/badge.svg)](https://github.com/elkins/open-bcif/actions/workflows/rust.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/Powered_by-Rust-orange.svg)](https://www.rust-lang.org/)
