@@ -28,9 +28,23 @@
 
 ## Installation
 
-### From Source
+### Via Cargo (Recommended)
 
-Ensure you have [Rust and Cargo](https://rustup.rs/) installed:
+If you have [Rust](https://rustup.rs/) installed, you can install `open-bcif` directly from [crates.io](https://crates.io/):
+
+```bash
+cargo install open-bcif
+```
+
+### Pre-built Binaries
+
+Download the latest pre-compiled binaries for Linux, macOS, and Windows from the [GitHub Releases](https://github.com/elkins/open-bcif/releases) page.
+
+1.  Download the binary for your platform.
+2.  Make it executable (Linux/macOS): `chmod +x open-bcif-*`
+3.  Move it to your PATH (e.g., `/usr/local/bin`).
+
+### From Source
 
 ```bash
 git clone https://github.com/elkins/open-bcif.git

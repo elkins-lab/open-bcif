@@ -4,11 +4,13 @@ Get up and running with `open-bcif` in 5 minutes.
 
 ## 1. Installation
 
-If you have Rust installed:
+The easiest way to install is via `cargo`:
 
 ```bash
-cargo install --git https://github.com/elkins/open-bcif.git
+cargo install open-bcif
 ```
+
+Alternatively, you can download pre-built binaries from the [Releases](https://github.com/elkins/open-bcif/releases) page.
 
 ## 2. Basic Validation
 
