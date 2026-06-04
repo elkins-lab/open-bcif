@@ -30,7 +30,7 @@ pub fn create_large_bcif(path: &str, num_categories: usize) -> anyhow::Result<()
     }
 
     let bcif = BcifFile {
-        version: "0.1.0".to_string(),
+        version: "0.1.1".to_string(),
         encoder: "large-test-gen".to_string(),
         data_blocks: vec![DataBlock {
             header: "LARGE_BLOCK".to_string(),
@@ -46,7 +46,7 @@ pub fn create_large_bcif(path: &str, num_categories: usize) -> anyhow::Result<()
 
 pub fn create_complex_sample() -> BcifFile {
     BcifFile {
-        version: "0.1.0".to_string(),
+        version: "0.1.1".to_string(),
         encoder: "test-generator".to_string(),
         data_blocks: vec![
             DataBlock {
