@@ -183,7 +183,7 @@
 <p>Get up and running with <code>open-bcif</code> in 5 minutes.</p>
 <h2 id="1-installation"><a class="header" href="#1-installation">1. Installation</a></h2>
 <p>If you have Rust installed:</p>
-<pre><code class="language-bash">cargo install --git https://github.com/YOUR_USERNAME/open-bcif.git
+<pre><code class="language-bash">cargo install --git https://github.com/elkins/open-bcif.git
 </code></pre>
 <h2 id="2-basic-validation"><a class="header" href="#2-basic-validation">2. Basic Validation</a></h2>
 <p>Check if a BinaryCIF file is valid:</p>
@@ -207,6 +207,13 @@
 </ol>
 <h2 id="memory-management"><a class="header" href="#memory-management">Memory Management</a></h2>
 <p>By using a streaming approach, <code>open-bcif</code> maintains a constant memory overhead regardless of the input file size.</p>
+<h2 id="key-design-principles"><a class="header" href="#key-design-principles">Key Design Principles</a></h2>
+<ul>
+<li><strong>Hybrid Parsing</strong>: Uses a custom streaming MessagePack parser to traverse the BCIF hierarchy (<code>DataBlock</code> -&gt; <code>Category</code> -&gt; <code>Column</code>) incrementally.</li>
+<li><strong>Full Encoding Support</strong>: Supports all standard BCIF encodings, including <code>ByteArray</code>, <code>Delta</code>, <code>RunLength</code>, <code>FixedPoint</code>, <code>IntegerPacking</code>, <code>IntervalQuantization</code>, and <code>StringArray</code>.</li>
+<li><strong>Validation Engine</strong>: Parallelized validation using <code>rayon</code> for high-throughput integrity checks.</li>
+<li><strong>Robust Testing</strong>: Comprehensive test suite including unit tests with parameterized matrices (via <code>rstest</code>) and end-to-end integration tests.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="binarycif-specification"><a class="header" href="#binarycif-specification">BinaryCIF Specification</a></h1>
 <p>BinaryCIF is a binary serialization of CIF data using MessagePack.</p>
 <h2 id="data-hierarchy"><a class="header" href="#data-hierarchy">Data Hierarchy</a></h2>
