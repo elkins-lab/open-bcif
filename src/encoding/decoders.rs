@@ -1,4 +1,3 @@
-
 pub fn decode_byte_array(data: &[u8], data_type: i32) -> anyhow::Result<Vec<f64>> {
     match data_type {
         1 => Ok(data.iter().map(|&x| x as i8 as f64).collect()), // Int8
@@ -16,7 +15,7 @@ pub fn decode_byte_array(data: &[u8], data_type: i32) -> anyhow::Result<Vec<f64>
             }
             Ok(result)
         } // Int32
-        4 => Ok(data.iter().map(|&x| x as f64).collect()), // Uint8
+        4 => Ok(data.iter().map(|&x| x as f64).collect()),       // Uint8
         5 => {
             let mut result = Vec::with_capacity(data.len() / 2);
             for chunk in data.chunks_exact(2) {
@@ -81,26 +80,46 @@ pub fn decode_fixed_point(data: Vec<f64>, factor: f64) -> Vec<f64> {
 }
 
 #[allow(dead_code)]
-pub fn decode_integer_packing(data: &[u8], byte_count: i32, is_unsigned: bool, src_size: i32) -> anyhow::Result<Vec<f64>> {
+pub fn decode_interval_quantization(
+    data: Vec<f64>,
+    min: f64,
+    max: f64,
+    num_steps: i32,
+) -> Vec<f64> {
+    let delta = (max - min) / (num_steps as f64);
+    data.into_iter()
+        .map(|x| min + (x + 0.5) * delta)
+        .collect()
+}
+
+#[allow(dead_code)]
+pub fn decode_integer_packing(
+    data: &[u8],
+    byte_count: i32,
+    is_unsigned: bool,
+    src_size: i32,
+) -> anyhow::Result<Vec<f64>> {
     let mut result = Vec::with_capacity(src_size as usize);
     let mut i = 0;
-    
+
     if is_unsigned {
         let limit = match byte_count {
             1 => 0xFFu32,
             2 => 0xFFFFu32,
             _ => anyhow::bail!("Unsupported byte count for IntegerPacking: {}", byte_count),
         };
-        
+
         while i < data.len() {
             let mut value: u32 = 0;
             loop {
                 let val = match byte_count {
                     1 => data[i] as u32,
                     2 => {
-                        if i + 1 >= data.len() { anyhow::bail!("Unexpected end of data in IntegerPacking"); }
-                        u16::from_le_bytes([data[i], data[i+1]]) as u32
-                    },
+                        if i + 1 >= data.len() {
+                            anyhow::bail!("Unexpected end of data in IntegerPacking");
+                        }
+                        u16::from_le_bytes([data[i], data[i + 1]]) as u32
+                    }
                     _ => unreachable!(),
                 };
                 i += byte_count as usize;
@@ -118,16 +137,18 @@ pub fn decode_integer_packing(data: &[u8], byte_count: i32, is_unsigned: bool, s
             _ => anyhow::bail!("Unsupported byte count for IntegerPacking: {}", byte_count),
         };
         let neg_limit = -pos_limit;
-        
+
         while i < data.len() {
             let mut value: i32 = 0;
             loop {
                 let val = match byte_count {
                     1 => data[i] as i8 as i32,
                     2 => {
-                        if i + 1 >= data.len() { anyhow::bail!("Unexpected end of data in IntegerPacking"); }
-                        i16::from_le_bytes([data[i], data[i+1]]) as i32
-                    },
+                        if i + 1 >= data.len() {
+                            anyhow::bail!("Unexpected end of data in IntegerPacking");
+                        }
+                        i16::from_le_bytes([data[i], data[i + 1]]) as i32
+                    }
                     _ => unreachable!(),
                 };
                 i += byte_count as usize;
@@ -139,16 +160,12 @@ pub fn decode_integer_packing(data: &[u8], byte_count: i32, is_unsigned: bool, s
             result.push(value as f64);
         }
     }
-    
+
     Ok(result)
 }
 
 #[allow(dead_code)]
-pub fn decode_string_array(
-    indices: &[i32],
-    offsets: &[i32],
-    string_data: &str,
-) -> Vec<String> {
+pub fn decode_string_array(indices: &[i32], offsets: &[i32], string_data: &str) -> Vec<String> {
     let mut result = Vec::with_capacity(indices.len());
     for &idx in indices {
         if idx == -1 {
@@ -159,7 +176,7 @@ pub fn decode_string_array(
             result.push("?".to_string()); // Standard CIF omitted placeholder
             continue;
         }
-        
+
         let start = offsets[idx as usize] as usize;
         let end = offsets[(idx + 1) as usize] as usize;
         result.push(string_data[start..end].to_string());
@@ -170,6 +187,16 @@ pub fn decode_string_array(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(vec![0, 1, 255], 1, vec![0.0, 1.0, -1.0])] // Int8
+    #[case(vec![1, 0, 255, 255], 2, vec![1.0, -1.0])] // Int16
+    #[case(vec![1, 0, 0, 0, 255, 255, 255, 255], 6, vec![1.0, 4294967295.0])] // Uint32
+    fn test_decode_byte_array_matrix(#[case] data: Vec<u8>, #[case] data_type: i32, #[case] expected: Vec<f64>) {
+        let decoded = decode_byte_array(&data, data_type).unwrap();
+        assert_eq!(decoded, expected);
+    }
 
     #[test]
     fn test_decode_string_array() {
@@ -180,35 +207,12 @@ mod tests {
         assert_eq!(decoded, vec!["ABC", "DEF", "ABC", "."]);
     }
 
-
     #[test]
     fn test_decode_integer_packing_signed_8bit() {
         // [127, 127, 10, -127, -127, -5, 42] -> [264, -259, 42]
         let data = vec![127, 127, 10, -127i8 as u8, -127i8 as u8, -5i8 as u8, 42];
         let decoded = decode_integer_packing(&data, 1, false, 3).unwrap();
         assert_eq!(decoded, vec![264.0, -259.0, 42.0]);
-    }
-
-
-    #[test]
-    fn test_decode_byte_array_int8() {
-        let data = vec![0, 1, 255]; // 0, 1, -1
-        let decoded = decode_byte_array(&data, 1).unwrap();
-        assert_eq!(decoded, vec![0.0, 1.0, -1.0]);
-    }
-
-    #[test]
-    fn test_decode_byte_array_int16() {
-        let data = vec![1, 0, 255, 255]; // 1, -1
-        let decoded = decode_byte_array(&data, 2).unwrap();
-        assert_eq!(decoded, vec![1.0, -1.0]);
-    }
-
-    #[test]
-    fn test_decode_byte_array_uint32() {
-        let data = vec![1, 0, 0, 0, 255, 255, 255, 255]; // 1, 4294967295
-        let decoded = decode_byte_array(&data, 6).unwrap();
-        assert_eq!(decoded, vec![1.0, 4294967295.0]);
     }
 
     #[test]
@@ -231,5 +235,14 @@ mod tests {
         let decoded = decode_fixed_point(data, 100.0);
         assert_eq!(decoded, vec![1.23, 4.56]);
     }
-}
 
+    #[test]
+    fn test_decode_interval_quantization() {
+        let data = vec![0.0, 99.0];
+        let decoded = decode_interval_quantization(data, 0.0, 100.0, 100);
+        // delta = 1.0. 
+        // 0.0 -> 0.0 + (0.0 + 0.5) * 1.0 = 0.5
+        // 99.0 -> 0.0 + (99.0 + 0.5) * 1.0 = 99.5
+        assert_eq!(decoded, vec![0.5, 99.5]);
+    }
+}

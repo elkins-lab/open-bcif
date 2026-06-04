@@ -1,7 +1,7 @@
 pub mod parser;
 
-use serde::{Deserialize, Serialize};
 use crate::encoding::EncodedData;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -33,4 +33,3 @@ pub struct Column {
     pub data: EncodedData,
     pub mask: Option<EncodedData>,
 }
-

@@ -1,7 +1,6 @@
 # open-bcif: The Infrastructure Bridge
 
-[![Crates.io](https://img.shields.io/crates/v/open-bcif.svg)](https://crates.io/crates/open-bcif)
-[![Docs.rs](https://docs.rs/open-bcif/badge.svg)](https://docs.rs/open-bcif)
+[![CI](https://github.com/elkins/open-bcif/actions/workflows/rust.yml/badge.svg)](https://github.com/elkins/open-bcif/actions/workflows/rust.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/Powered_by-Rust-orange.svg)](https://www.rust-lang.org/)
 
@@ -34,7 +33,7 @@
 Ensure you have [Rust and Cargo](https://rustup.rs/) installed:
 
 ```bash
-git clone https://github.com/your-repo/open-bcif.git
+git clone https://github.com/elkins/open-bcif.git
 cd open-bcif
 cargo install --path .
 ```
@@ -60,7 +59,21 @@ open-bcif merge part1.bcif part2.bcif --output merged.bcif
 
 `open-bcif` is written in Rust for maximum performance and memory safety. It utilizes a custom streaming MessagePack parser to traverse the BCIF hierarchy (`DataBlock` -> `Category` -> `Column`) incrementally.
 
-For more details, see the [Documentation Site](docs/README.md).
+For more details, see the [Documentation](https://elkins.github.io/open-bcif/).
+
+## Citation
+
+If you use `open-bcif` in your research, please cite it as:
+
+```bibtex
+@software{elkins2026openbcif,
+  author = {Elkins, George},
+  title = {open-bcif: High-performance streaming toolkit for BinaryCIF},
+  year = {2026},
+  url = {https://github.com/elkins/open-bcif},
+  version = {0.1.0}
+}
+```
 
 ## License
 

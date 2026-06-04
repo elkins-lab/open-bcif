@@ -1,8 +1,8 @@
+use crate::encoding::{EncodedData, Encoding};
+use crate::streaming::{Category, Column, DataBlock, File as BcifFile};
+use serde_bytes::ByteBuf;
 use std::fs::File;
 use std::io::BufWriter;
-use crate::streaming::{File as BcifFile, DataBlock, Category, Column};
-use crate::encoding::{EncodedData, Encoding};
-use serde_bytes::ByteBuf;
 
 pub fn create_sample_bcif(path: &str) -> anyhow::Result<()> {
     let bcif = create_complex_sample();
@@ -18,28 +18,24 @@ pub fn create_large_bcif(path: &str, num_categories: usize) -> anyhow::Result<()
         categories.push(Category {
             name: format!("_cat_{}", i),
             row_count: 100,
-            columns: vec![
-                Column {
-                    name: "data".to_string(),
-                    data: EncodedData {
-                        encoding: vec![Encoding::ByteArray { data_type: 1 }],
-                        data: ByteBuf::from(vec![42; 100]),
-                    },
-                    mask: None,
-                }
-            ],
+            columns: vec![Column {
+                name: "data".to_string(),
+                data: EncodedData {
+                    encoding: vec![Encoding::ByteArray { data_type: 1 }],
+                    data: ByteBuf::from(vec![42; 100]),
+                },
+                mask: None,
+            }],
         });
     }
 
     let bcif = BcifFile {
         version: "0.1.0".to_string(),
         encoder: "large-test-gen".to_string(),
-        data_blocks: vec![
-            DataBlock {
-                header: "LARGE_BLOCK".to_string(),
-                categories,
-            }
-        ],
+        data_blocks: vec![DataBlock {
+            header: "LARGE_BLOCK".to_string(),
+            categories,
+        }],
     };
 
     let file = File::create(path)?;
@@ -55,39 +51,39 @@ pub fn create_complex_sample() -> BcifFile {
         data_blocks: vec![
             DataBlock {
                 header: "TEST_BLOCK_1".to_string(),
-                categories: vec![
-                    Category {
-                        name: "_test_category".to_string(),
-                        row_count: 3,
-                        columns: vec![
-                            Column {
-                                name: "id".to_string(),
-                                data: EncodedData {
-                                    encoding: vec![Encoding::ByteArray { data_type: 1 }], // Int8
-                                    data: ByteBuf::from(vec![1, 2, 3]),
-                                },
-                                mask: None,
+                categories: vec![Category {
+                    name: "_test_category".to_string(),
+                    row_count: 3,
+                    columns: vec![
+                        Column {
+                            name: "id".to_string(),
+                            data: EncodedData {
+                                encoding: vec![Encoding::ByteArray { data_type: 1 }], // Int8
+                                data: ByteBuf::from(vec![1, 2, 3]),
                             },
-                            Column {
-                                name: "delta_data".to_string(),
-                                data: EncodedData {
-                                    encoding: vec![
-                                        Encoding::Delta { origin: 10, src_type: 3 },
-                                        Encoding::ByteArray { data_type: 3 },
-                                    ],
-                                    data: ByteBuf::from(vec![1, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0]), // [11, 12, 14]
-                                },
-                                mask: None,
-                            }
-                        ],
-                    }
-                ],
+                            mask: None,
+                        },
+                        Column {
+                            name: "delta_data".to_string(),
+                            data: EncodedData {
+                                encoding: vec![
+                                    Encoding::Delta {
+                                        origin: 10,
+                                        src_type: 3,
+                                    },
+                                    Encoding::ByteArray { data_type: 3 },
+                                ],
+                                data: ByteBuf::from(vec![1, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0]), // [11, 12, 14]
+                            },
+                            mask: None,
+                        },
+                    ],
+                }],
             },
             DataBlock {
                 header: "TEST_BLOCK_2".to_string(),
                 categories: vec![],
-            }
+            },
         ],
     }
 }
-

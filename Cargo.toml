@@ -2,6 +2,12 @@
 name = "open-bcif"
 version = "0.1.0"
 edition = "2021"
+authors = ["George Elkins"]
+description = "A high-performance streaming toolkit for BinaryCIF (BCIF) files."
+repository = "https://github.com/elkins/open-bcif"
+license = "MIT"
+keywords = ["structural-biology", "cif", "binarycif", "streaming", "parser"]
+categories = ["science", "data-structures"]
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
@@ -21,6 +27,7 @@ indicatif = "0.17"
 assert_cmd = "2.0"
 predicates = "3.0"
 criterion = { version = "0.5", features = ["html_reports"] }
+rstest = "0.18"
 
 [[bench]]
 name = "decoding_benchmarks"

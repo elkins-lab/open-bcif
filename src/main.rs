@@ -16,7 +16,11 @@ fn main() -> anyhow::Result<()> {
         Commands::Merge { inputs, output } => {
             commands::merge::merge(&inputs, &output)?;
         }
-        Commands::Convert { input, output, format } => {
+        Commands::Convert {
+            input,
+            output,
+            format,
+        } => {
             commands::convert::convert(&input, &output, &format)?;
         }
     }

@@ -1,8 +1,8 @@
-use std::fs::File;
-use std::io::BufReader;
 use crate::streaming::parser::StreamingParser;
 use indicatif::{ProgressBar, ProgressStyle};
 use rayon::prelude::*;
+use std::fs::File;
+use std::io::BufReader;
 
 pub fn validate(input_path: &str) -> anyhow::Result<()> {
     let file = File::open(input_path)?;
@@ -24,18 +24,29 @@ pub fn validate(input_path: &str) -> anyhow::Result<()> {
     for i in 0..block_count {
         pb.set_message(format!("Block {}", i));
         let block = parser.next_data_block()?;
-        
+
         // Parallelize validation of categories within a block
-        block.categories.par_iter().try_for_each(|category| -> anyhow::Result<()> {
-            category.columns.par_iter().try_for_each(|column| -> anyhow::Result<()> {
-                use crate::encoding::Encoding;
-                if let Some(Encoding::ByteArray { data_type }) = column.data.encoding.first() {
-                    let _ = crate::encoding::decoders::decode_byte_array(&column.data.data, *data_type)?;
-                }
-                Ok(())
-            })
-        })?;
-        
+        block
+            .categories
+            .par_iter()
+            .try_for_each(|category| -> anyhow::Result<()> {
+                category
+                    .columns
+                    .par_iter()
+                    .try_for_each(|column| -> anyhow::Result<()> {
+                        use crate::encoding::Encoding;
+                        if let Some(Encoding::ByteArray { data_type }) =
+                            column.data.encoding.first()
+                        {
+                            let _ = crate::encoding::decoders::decode_byte_array(
+                                &column.data.data,
+                                *data_type,
+                            )?;
+                        }
+                        Ok(())
+                    })
+            })?;
+
         pb.inc(1);
     }
 
@@ -54,10 +65,10 @@ mod tests {
     fn test_validate_functional() {
         let path = "test_validate.bcif";
         create_sample_bcif(path).unwrap();
-        
+
         let res = validate(path);
         assert!(res.is_ok());
-        
+
         fs::remove_file(path).unwrap();
     }
 
@@ -65,11 +76,10 @@ mod tests {
     fn test_validate_large() {
         let path = "test_validate_large.bcif";
         crate::test_utils::create_large_bcif(path, 100).unwrap();
-        
+
         let res = validate(path);
         assert!(res.is_ok());
-        
+
         fs::remove_file(path).unwrap();
     }
 }
-

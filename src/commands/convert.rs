@@ -1,13 +1,16 @@
+use crate::encoding::decoders;
+use crate::encoding::Encoding;
+use crate::streaming::parser::StreamingParser;
+use anyhow::Context;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
-use crate::streaming::parser::StreamingParser;
-use crate::encoding::Encoding;
-use crate::encoding::decoders;
-use anyhow::Context;
 
 pub fn convert(input_path: &str, output_path: &str, format: &str) -> anyhow::Result<()> {
     if format != "cif" {
-        anyhow::bail!("Unsupported conversion format: {}. Only 'cif' is supported currently.", format);
+        anyhow::bail!(
+            "Unsupported conversion format: {}. Only 'cif' is supported currently.",
+            format
+        );
     }
 
     let file = File::open(input_path).context("Failed to open input file")?;
@@ -15,7 +18,7 @@ pub fn convert(input_path: &str, output_path: &str, format: &str) -> anyhow::Res
     let mut parser = StreamingParser::new(reader);
 
     let (_, _, block_count) = parser.parse_file_metadata()?;
-    
+
     let out_file = File::create(output_path).context("Failed to create output file")?;
     let mut writer = BufWriter::new(out_file);
 
@@ -24,13 +27,18 @@ pub fn convert(input_path: &str, output_path: &str, format: &str) -> anyhow::Res
     for _ in 0..block_count {
         let block = parser.next_data_block()?;
         writeln!(writer, "data_{}", block.header)?;
-        
+
         for category in block.categories {
             if category.row_count == 1 {
                 // Key-value style for single-row categories
                 for column in category.columns {
                     let values = decode_column(&column, category.row_count)?;
-                    writeln!(writer, "{:<30} {}", format!("{}.{}", category.name, column.name), values[0])?;
+                    writeln!(
+                        writer,
+                        "{:<30} {}",
+                        format!("{}.{}", category.name, column.name),
+                        values[0]
+                    )?;
                 }
             } else {
                 // Loop style for multi-row categories
@@ -38,13 +46,13 @@ pub fn convert(input_path: &str, output_path: &str, format: &str) -> anyhow::Res
                 for column in &category.columns {
                     writeln!(writer, "{}.{}", category.name, column.name)?;
                 }
-                
+
                 // Decode all columns
                 let mut decoded_columns = Vec::new();
                 for column in &category.columns {
                     decoded_columns.push(decode_column(column, category.row_count)?);
                 }
-                
+
                 for r in 0..category.row_count as usize {
                     let mut row_vals = Vec::new();
                     for col in &decoded_columns {
@@ -68,7 +76,7 @@ fn decode_column(column: &crate::streaming::Column, row_count: u32) -> anyhow::R
         let floats = decoders::decode_byte_array(&column.data.data, *data_type)?;
         return Ok(floats.into_iter().map(|f| f.to_string()).collect());
     }
-    
+
     // Fallback if not ByteArray or empty
     Ok(vec!["?".to_string(); row_count as usize])
 }
@@ -84,14 +92,14 @@ mod tests {
         let input = "test_conv_input.bcif";
         let output = "test_conv_output.cif";
         create_sample_bcif(input).unwrap();
-        
+
         convert(input, output, "cif").unwrap();
-        
+
         let content = fs::read_to_string(output).unwrap();
         assert!(content.contains("data_TEST_BLOCK_1"));
         assert!(content.contains("_test_category.id"));
         assert!(content.contains("1"));
-        
+
         fs::remove_file(input).unwrap();
         fs::remove_file(output).unwrap();
     }

@@ -7,7 +7,7 @@ Get up and running with `open-bcif` in 5 minutes.
 If you have Rust installed:
 
 ```bash
-cargo install --git https://github.com/YOUR_USERNAME/open-bcif.git
+cargo install --git https://github.com/elkins/open-bcif.git
 ```
 
 ## 2. Basic Validation
