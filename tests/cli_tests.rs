@@ -101,3 +101,32 @@ fn test_validate_missing_file() {
         .assert()
         .failure();
 }
+
+#[test]
+fn test_validate_corrupted_file() {
+    let path = "test_corrupt_cli.bcif";
+    fs::write(path, vec![0x93, 0x01, 0x02, 0x03]).unwrap(); // Random bytes
+
+    let mut cmd = Command::cargo_bin("open-bcif").unwrap();
+    cmd.arg("validate").arg(path).assert().failure();
+
+    fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn test_convert_invalid_format() {
+    let path = "test_fmt.bcif";
+    open_bcif::test_utils::create_sample_bcif(path).unwrap();
+
+    let mut cmd = Command::cargo_bin("open-bcif").unwrap();
+    cmd.arg("convert")
+        .arg(path)
+        .arg("--output")
+        .arg("out.txt")
+        .arg("--format")
+        .arg("yaml") // Unsupported
+        .assert()
+        .failure();
+
+    fs::remove_file(path).unwrap();
+}

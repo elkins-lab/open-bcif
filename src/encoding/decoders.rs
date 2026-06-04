@@ -216,6 +216,33 @@ mod tests {
     }
 
     #[test]
+    fn test_decode_integer_packing_unsigned_16bit() {
+        // [65535, 65535, 10, 42] -> [131080, 42]
+        let data = vec![0xFF, 0xFF, 0xFF, 0xFF, 10, 0, 42, 0];
+        let decoded = decode_integer_packing(&data, 2, true, 2).unwrap();
+        assert_eq!(decoded, vec![131080.0, 42.0]);
+    }
+
+    #[test]
+    fn test_decode_integer_packing_errors() {
+        let data = vec![1, 2, 3];
+        // Unexpected end of data for 16-bit packing
+        let res = decode_integer_packing(&data, 2, true, 2);
+        assert!(res.is_err());
+
+        // Unsupported byte count
+        let res = decode_integer_packing(&data, 4, true, 2);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_decode_byte_array_unsupported() {
+        let data = vec![0, 0, 0, 0];
+        let res = decode_byte_array(&data, 999);
+        assert!(res.is_err());
+    }
+
+    #[test]
     fn test_decode_delta() {
         let data = vec![1.0, 1.0, 2.0];
         let decoded = decode_delta(data, 10);
