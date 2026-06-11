@@ -103,21 +103,14 @@ impl<R: Read> StreamingParser<R> {
         Ok(column)
     }
 
-    /// LEGACY: Maintained for compatibility during refactor, but uses internal streaming.
+    /// LEGACY: Maintained for compatibility during refactor.
+    /// Uses serde to deserialize the whole Category, which safely handles unordered keys (e.g. from python-mmcif).
     pub fn next_data_block(&mut self) -> anyhow::Result<DataBlock> {
         let header_info = self.next_data_block_header()?;
         let mut categories = Vec::with_capacity(header_info.category_count as usize);
         for _ in 0..header_info.category_count {
-            let cat_header = self.next_category_header()?;
-            let mut columns = Vec::with_capacity(cat_header.column_count as usize);
-            for _ in 0..cat_header.column_count {
-                columns.push(self.next_column()?);
-            }
-            categories.push(Category {
-                name: cat_header.name,
-                row_count: cat_header.row_count,
-                columns,
-            });
+            let category: Category = rmp_serde::from_read(&mut self.reader)?;
+            categories.push(category);
         }
         Ok(DataBlock {
             header: header_info.header,
