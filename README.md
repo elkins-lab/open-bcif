@@ -75,7 +75,7 @@ open-bcif merge part1.bcif part2.bcif --output merged.bcif
 
 `open-bcif` is written in Rust for maximum performance and memory safety. It utilizes a custom streaming MessagePack parser to traverse the BCIF hierarchy (`DataBlock` -> `Category` -> `Column`) incrementally.
 
-For more details, see the [Documentation](https://elkins.github.io/open-bcif/).
+For more details, see the [Documentation](https://elkins-lab.github.io/open-bcif/).
 
 ## Citation
 
